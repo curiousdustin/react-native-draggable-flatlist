@@ -94,6 +94,7 @@ type Props<T> = Modify<VirtualizedListProps<T>, {
   renderItem: (params: RenderItemParams<T>) => JSX.Element
   animationConfig: Partial<Animated.SpringConfig>,
   debug?: boolean,
+  enableGestureHandlers: boolean,
 }>
 
 type State = {
@@ -215,6 +216,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     autoscrollSpeed: 100,
     animationConfig: {},
     scrollEnabled: true,
+    enableGestureHandlers: true
   }
 
   constructor(props: Props<T>) {
@@ -731,7 +733,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
 
   CellRendererComponent = (cellProps) => {
     const { item, index, children, onLayout } = cellProps
-    const { horizontal } = this.props
+    const { horizontal, enableGestureHandlers } = this.props
     const { activeKey } = this.state
     const key = this.keyExtractor(item, index)
     if (!this.cellData.get(key)) this.setCellData(key, index)
@@ -755,6 +757,7 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
           }}
         >
           <TapGestureHandler
+            enabled={enableGestureHandlers}
             onHandlerStateChange={onCellTap}
           >
             <Animated.View
@@ -781,15 +784,17 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
   }
 
   render() {
-    const { scrollEnabled, debug } = this.props
+    const { scrollEnabled, enableGestureHandlers, debug } = this.props
     const { hoverComponent } = this.state
     return (
       <TapGestureHandler
+        enabled={enableGestureHandlers}
         ref={this.tapGestureHandlerRef}
         onHandlerStateChange={this.onContainerTapStateChange}
       >
         <Animated.View style={styles.flex}>
           <PanGestureHandler
+            enabled={enableGestureHandlers}
             ref={this.panGestureHandlerRef}
             onGestureEvent={this.onPanGestureEvent}
             onHandlerStateChange={this.onPanStateChange}
