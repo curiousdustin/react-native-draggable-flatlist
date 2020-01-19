@@ -95,6 +95,8 @@ type Props<T> = Modify<VirtualizedListProps<T>, {
   animationConfig: Partial<Animated.SpringConfig>,
   debug?: boolean,
   enableGestureHandlers: boolean,
+  onScrollX?: (x: number) => void,
+  onScrollY?: (y: number) => void,
 }>
 
 type State = {
@@ -587,27 +589,48 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     call(this.autoscrollParams, this.autoscroll),
   ])
 
+  updateAutoScroll = cond(
+    and(
+      this.isAutoscrolling.native,
+      or(
+        lessOrEq(
+          abs(sub(this.targetScrollOffset, this.scrollOffset)),
+          scrollPositionTolerance
+        ),
+        this.isScrolledUp,
+        this.isScrolledDown,
+      )
+    ), [
+    set(this.isAutoscrolling.native, 0),
+    this.checkAutoscroll,
+    call(this.autoscrollParams, this.onAutoscrollComplete),
+  ])
+
   onScroll = event([
     {
-      nativeEvent: ({ contentOffset }) => block([
-        set(this.scrollOffset, this.props.horizontal ? contentOffset.x : contentOffset.y),
-        cond(
-          and(
-            this.isAutoscrolling.native,
-            or(
-              lessOrEq(
-                abs(sub(this.targetScrollOffset, this.scrollOffset)),
-                scrollPositionTolerance
-              ),
-              this.isScrolledUp,
-              this.isScrolledDown,
-            )
-          ), [
-          set(this.isAutoscrolling.native, 0),
-          this.checkAutoscroll,
-          call(this.autoscrollParams, this.onAutoscrollComplete),
-        ]),
-      ])
+      // nativeEvent: ({ contentOffset }) => block([
+      nativeEvent: {
+        contentOffset: {
+          x: (x) => block([
+            set(this.scrollOffset, this.props.horizontal ? x : this.scrollOffset),
+            this.updateAutoScroll,
+            call([x], ([x]) => {
+              if (this.props.onScrollX) {
+                this.props.onScrollX(x)
+              }
+            })
+          ]),
+          y: (y) => block([
+            set(this.scrollOffset, this.props.horizontal ? this.scrollOffset : y),
+            this.updateAutoScroll,
+            call([y], ([y]) => {
+              if (this.props.onScrollY) {
+                this.props.onScrollY(y)
+              }
+            })
+          ])
+        }
+      }
     }
   ])
 
